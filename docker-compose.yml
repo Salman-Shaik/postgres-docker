@@ -1,0 +1,11 @@
+version: '3.2'
+
+services:
+  number:
+    image: salmanshaik8/numbers
+    port:
+      - 9000:8000
+  postgres:
+    image: postgres:9.6
+    port:
+      - 5432:5432
