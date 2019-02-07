@@ -5,8 +5,10 @@ const app = express();
 module.exports = app;
 
 const pg = new Pool({
-  database: 'postgres',
-  user: 'salmans',
+  database: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  host: 'db',
   password: '',
   port: 5432,
 })
