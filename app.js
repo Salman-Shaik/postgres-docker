@@ -1,25 +1,21 @@
 const express = require('express');
-const Pool = require('pg').Pool;
+const { Client } = require('pg');
 
 const app = express();
 module.exports = app;
 
-const pg = new Pool({
-  database: process.env.POSTGRES_DB,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  host: 'db',
-  password: '',
-  port: 5432,
-})
+const dbClient = new Client(process.env.DATABASE_URL);
+dbClient.connect();
+
 const filterResults = resultArray => {
   return resultArray.map(item => {
     return item.number;
   });
 }
-pg.query("CREATE TABLE IF NOT EXISTS numbers(number integer)", (err, res) => {
+
+dbClient.query("CREATE TABLE IF NOT EXISTS numbers(number integer)", (err, res) => {
   if (err) {
-    console.log(err)
+    console.log(err);
     return;
   }
   console.log('Table Created')
@@ -34,32 +30,23 @@ app.use(({ url, method},res,next) => {
 
 app.post("/number", (req, res) => {
   const number = req.body.number;
-  pg.query(`INSERT INTO numbers(number) VALUES (${number})`, (err, result) => {
-    if (err) {
-      console.log(err);
-      res.end();
-    }
+  dbClient.query(`INSERT INTO numbers(number) VALUES (${number})`, (err, result) => {
+    if (err) throw err;
     res.send("Data Succesfully Inserted");
   })
 });
 
 app.get("/number", (req, res) => {
-  pg.query("SELECT * FROM numbers", (err, result) => {
-    if (err) {
-      console.log(err);
-      res.end();
-    }
+  dbClient.query("SELECT * FROM numbers", (err, result) => {
+    if (err) throw err;
     res.send(filterResults(result.rows));
   })
 });
 
 app.delete("/number", (req, res) => {
   const number = req.body.number;
-  pg.query(`DELETE FROM numbers WHERE number=${number}`, (err, result) => {
-    if (err) {
-      console.log(err);
-      res.end();
-    }
+  dbClient.query(`DELETE FROM numbers WHERE number=${number}`, (err, result) => {
+    if (err) throw err;
     res.send("Data Succesfully Deleted")
   })
 });
