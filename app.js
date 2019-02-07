@@ -1,5 +1,12 @@
 const express = require('express');
-const { Client } = require('pg');
+const {Client} = require('pg');
+
+const {
+  createTable,
+  insertRow,
+  fetchRows,
+  deleteRows
+} = require('./dbHandler.js');
 
 const app = express();
 module.exports = app;
@@ -7,46 +14,22 @@ module.exports = app;
 const dbClient = new Client(process.env.DATABASE_URL);
 dbClient.connect();
 
-const filterResults = resultArray => {
-  return resultArray.map(item => {
-    return item.number;
-  });
-}
-
-dbClient.query("CREATE TABLE IF NOT EXISTS numbers(number integer)", (err, res) => {
-  if (err) {
-    console.log(err);
-    return;
-  }
-  console.log('Table Created')
-});
+createTable(dbClient);
 
 app.use(express.json());
-
-app.use(({ url, method},res,next) => {
+app.use(({url, method}, res, next) => {
   console.log(`${method} ${url}`);
   next();
 });
 
-app.post("/number", (req, res) => {
-  const number = req.body.number;
-  dbClient.query(`INSERT INTO numbers(number) VALUES (${number})`, (err, result) => {
-    if (err) throw err;
-    res.send("Data Succesfully Inserted");
-  })
-});
+app.get("/rest", (req, res) => {
+  const endTime = new Date().getTime() + 10000;
+  while (new Date().getTime() != endTime) {}
+  res.send();
+})
+app.get("/health", (req, res) => res.send())
+app.get("/number", (req, res) => fetchRows(dbClient, res));
 
-app.get("/number", (req, res) => {
-  dbClient.query("SELECT * FROM numbers", (err, result) => {
-    if (err) throw err;
-    res.send(filterResults(result.rows));
-  })
-});
+app.post("/number", ({body}, res) => insertRow(dbClient, body.number, res));
 
-app.delete("/number", (req, res) => {
-  const number = req.body.number;
-  dbClient.query(`DELETE FROM numbers WHERE number=${number}`, (err, result) => {
-    if (err) throw err;
-    res.send("Data Succesfully Deleted")
-  })
-});
+app.delete("/number", ({body}, res) => deleteRows(dbClient, body.number, res));
