@@ -1,13 +1,31 @@
-version: "3"
+version: "3.1"
+
+volumes:
+  postgresVolume:
 
 services:
   db:
     image: postgres:latest
+    volumes:
+      - postgresVolume:/var/lib/postgresql/data
   web:
     build: .
-    links:
+    container_name: actualServer
+    depends_on:
       - db
+      - proxy
     ports:
-      - 8000:8000
+      - 80:80
+    volumes:
+      - .:/src/app/
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/postgres
+      PROXY_URL: http://proxy
+      URL: http://web
+  proxy:
+    build: ./proxy/
+    container_name: proxy
+    volumes:
+      - ./proxy/:/src/app/proxy/
+    ports:
+      - 8000:8000
